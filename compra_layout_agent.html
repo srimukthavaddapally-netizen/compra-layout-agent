@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compra – Chat-Based Layout Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #F4F3F0;
+      --surface: #FFFFFF;
+      --surface2: #F9F8F6;
+      --border: rgba(0,0,0,0.09);
+      --border-strong: rgba(0,0,0,0.16);
+      --text: #1a1a1a;
+      --text-2: #666;
+      --text-3: #999;
+      --accent: #1A6EEA;
+      --accent-light: #EEF4FF;
+      --accent-dark: #1558c9;
+      --green: #1D9E75;
+      --amber: #BA7517;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      padding: 14px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header .brand { font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+    header .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    header .subtitle { font-size: 12px; color: var(--text-2); }
+    header .header-actions { display: flex; gap: 8px; }
+    header button {
+      padding: 6px 14px; font-size: 12px; font-family: inherit;
+      border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+      background: var(--surface); color: var(--text-2); cursor: pointer;
+    }
+    header button:hover { background: var(--bg); }
+    header button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    header button.primary:hover { background: var(--accent-dark); }
+
+    main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      gap: 0;
+    }
+
+    /* ── Chat Panel ── */
+    #chat-panel {
+      width: 320px;
+      min-width: 320px;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+    }
+    #chat-topbar {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #chat-topbar .label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-2);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--green);
+      background: #e1f5ee;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scrollbar-width: thin;
+    }
+    .msg-wrap { display: flex; flex-direction: column; gap: 2px; }
+    .msg-wrap.user { align-items: flex-end; }
+    .msg-wrap.agent { align-items: flex-start; }
+    .msg-sender { font-size: 10px; color: var(--text-3); padding: 0 4px; }
+    .msg {
+      max-width: 88%;
+      padding: 9px 13px;
+      font-size: 13px;
+      line-height: 1.5;
+      border-radius: var(--radius);
+    }
+    .msg.user { background: var(--accent); color: #fff; border-bottom-right-radius: 3px; }
+    .msg.agent { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+    .msg.thinking { opacity: 0.55; font-style: italic; }
+    .msg.success { color: var(--green); }
+    .msg.error { color: #c0392b; }
+
+    #suggestions {
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      font-size: 11px;
+      padding: 4px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      border-radius: 20px;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .chip:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+
+    #input-area {
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 7px;
+      align-items: flex-end;
+    }
+    #chat-input {
+      flex: 1;
+      padding: 9px 11px;
+      font-size: 13px;
+      font-family: inherit;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      resize: none;
+      min-height: 38px;
+      max-height: 90px;
+      line-height: 1.4;
+    }
+    #chat-input:focus { border-color: var(--accent); background: #fff; }
+    #send-btn {
+      padding: 9px 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #send-btn:hover { background: var(--accent-dark); }
+    #send-btn:disabled { opacity: 0.45; cursor: default; }
+
+    /* ── Canvas Panel ── */
+    #canvas-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    #canvas-toolbar {
+      padding: 10px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #canvas-toolbar .left { display: flex; align-items: center; gap: 10px; }
+    #canvas-toolbar .canvas-title { font-size: 13px; font-weight: 500; }
+    #canvas-toolbar .el-info {
+      font-size: 12px;
+      color: var(--text-2);
+      background: var(--bg);
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+    #canvas-toolbar .actions { display: flex; gap: 6px; }
+    #canvas-toolbar .actions button {
+      font-size: 12px; font-family: inherit;
+      padding: 5px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text-2);
+      cursor: pointer;
+    }
+    #canvas-toolbar .actions button:hover { background: var(--bg); }
+
+    #canvas-wrap {
+      flex: 1;
+      overflow: auto;
+      background: #ECEAE5;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: 24px;
+    }
+    #canvas-bg {
+      position: relative;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      border-radius: 4px;
+      overflow: visible;
+    }
+    #canvas-ruler {
+      position: absolute;
+      top: -18px;
+      left: 0;
+      font-size: 10px;
+      color: #aaa;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .layout-el {
+      position: absolute;
+      cursor: pointer;
+      transition: box-shadow 0.12s;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .layout-el:hover { box-shadow: 0 0 0 2px var(--accent)44, 0 2px 12px rgba(0,0,0,0.1); }
+    .layout-el.selected { box-shadow: 0 0 0 2px var(--accent), 0 2px 16px rgba(26,110,234,0.18); }
+    .el-label-tag {
+      position: absolute;
+      top: -20px;
+      left: 0;
+      font-size: 10px;
+      color: var(--accent);
+      background: var(--accent-light);
+      padding: 1px 6px;
+      border-radius: 3px;
+      white-space: nowrap;
+      display: none;
+      font-family: 'JetBrains Mono', monospace;
+      pointer-events: none;
+    }
+    .layout-el:hover .el-label-tag,
+    .layout-el.selected .el-label-tag { display: block; }
+    .el-text {
+      white-space: pre-line;
+      text-align: center;
+      padding: 8px 12px;
+      pointer-events: none;
+    }
+
+    /* Properties panel */
+    #props-panel {
+      width: 220px;
+      min-width: 220px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      font-size: 12px;
+    }
+    #props-topbar {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-2);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    #props-content { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+    .prop-row { display: flex; flex-direction: column; gap: 3px; }
+    .prop-label { font-size: 11px; color: var(--text-3); }
+    .prop-value { font-size: 12px; color: var(--text); font-family: 'JetBrains Mono', monospace; background: var(--bg); padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+    .prop-color-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--border-strong); vertical-align: middle; margin-right: 4px; }
+
+    #history-section { padding: 12px 14px; border-top: 1px solid var(--border); }
+    .history-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .history-item { font-size: 11px; color: var(--text-2); padding: 3px 0; border-bottom: 1px solid var(--border); }
+    .history-item:last-child { border-bottom: none; }
+
+    /* JSON view */
+    #json-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    #json-modal.open { display: flex; }
+    #json-box {
+      background: #1a1a2e;
+      color: #a8d8a8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 20px 24px;
+      border-radius: var(--radius);
+      max-width: 680px;
+      width: 90%;
+      max-height: 70vh;
+      overflow: auto;
+      position: relative;
+    }
+    #json-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: transparent;
+      border: 1px solid #444;
+      color: #aaa;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #json-close:hover { background: #333; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand"><div class="brand-dot"></div> Compra Layout Agent</div>
+    <div class="subtitle">Chat-based UI canvas builder — AI Engineer Intern POC</div>
+  </div>
+  <div class="header-actions">
+    <button onclick="showJSON()">View JSON</button>
+    <button onclick="resetLayout()">Reset</button>
+    <button class="primary" onclick="exportJSON()">Export JSON</button>
+  </div>
+</header>
+
+<main>
+  <!-- Chat Panel -->
+  <div id="chat-panel">
+    <div id="chat-topbar">
+      <span class="label">Layout Chat</span>
+      <span class="status-badge">Active</span>
+    </div>
+    <div id="messages"></div>
+    <div id="suggestions"></div>
+    <div id="input-area">
+      <textarea id="chat-input" placeholder="e.g. make the header dark blue..." rows="1"></textarea>
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <!-- Canvas Panel -->
+  <div id="canvas-panel">
+    <div id="canvas-toolbar">
+      <div class="left">
+        <span class="canvas-title">Canvas</span>
+        <span class="el-info" id="el-info">No element selected</span>
+      </div>
+      <div class="actions">
+        <button onclick="showJSON()">&#123;&#125; JSON</button>
+        <button onclick="resetLayout()">Reset layout</button>
+      </div>
+    </div>
+    <div id="canvas-wrap">
+      <div id="canvas-bg">
+        <div id="canvas-ruler"></div>
+        <div id="canvas-inner"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Properties Panel -->
+  <div id="props-panel">
+    <div id="props-topbar">Properties</div>
+    <div id="props-content">
+      <p style="font-size:12px;color:var(--text-3)">Click an element on the canvas to inspect its properties.</p>
+    </div>
+    <div id="history-section">
+      <div class="history-label">Command history</div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+</main>
+
+<!-- JSON Modal -->
+<div id="json-modal">
+  <div id="json-box">
+    <button id="json-close" onclick="document.getElementById('json-modal').classList.remove('open')">✕ Close</button>
+    <pre id="json-content"></pre>
+  </div>
+</div>
+
+<script>
+  const DESIGN_JSON = {
+    canvas: { width: 760, height: 520, background: "#FFFFFF" },
+    elements: [
+      { id: "header", type: "rect", label: "Header", x: 0, y: 0, w: 760, h: 64, fill: "#1A6EEA", color: "#fff", text: "Compra Dashboard", fontSize: 18, fontWeight: "600", textAlign: "center", borderRadius: "0" },
+      { id: "sidebar", type: "rect", label: "Sidebar Nav", x: 0, y: 64, w: 180, h: 456, fill: "#F9F8F6", color: "#444", border: "1px solid #e0e0e0", text: "Navigation", fontSize: 13, textAlign: "center" },
+      { id: "card-sales", type: "rect", label: "Sales Card", x: 196, y: 80, w: 168, h: 96, fill: "#FFFFFF", color: "#1a1a1a", border: "1px solid #e0e0e0", text: "Total Sales\n₹ 4,82,000", fontSize: 13, textAlign: "center", borderRadius: "8" },
+      { id: "card-orders", type: "rect", label: "Orders Card", x: 380, y: 80, w: 168, h: 96, fill: "#FFFFFF", color: "#1a1a1a", border: "1px solid #e0e0e0", text: "Orders\n1,204", fontSize: 13, textAlign: "center", borderRadius: "8" },
+      { id: "card-users", type: "rect", label: "Users Card", x: 564, y: 80, w: 180, h: 96, fill: "#FFFFFF", color: "#1a1a1a", border: "1px solid #e0e0e0", text: "Active Users\n342", fontSize: 13, textAlign: "center", borderRadius: "8" },
+      { id: "chart", type: "rect", label: "Chart Area", x: 196, y: 196, w: 350, h: 200, fill: "#EEF4FF", color: "#1A6EEA", border: "1px solid #b5d4f4", text: "Revenue Chart", fontSize: 13, textAlign: "center", borderRadius: "8" },
+      { id: "feed", type: "rect", label: "Activity Feed", x: 562, y: 196, w: 182, h: 200, fill: "#FFFBE6", color: "#BA7517", border: "1px solid #FAC775", text: "Activity Feed", fontSize: 13, textAlign: "center", borderRadius: "8" },
+      { id: "table", type: "rect", label: "Data Table", x: 196, y: 412, w: 548, h: 96, fill: "#FFFFFF", color: "#444", border: "1px solid #e0e0e0", text: "Recent Orders Table", fontSize: 13, textAlign: "center", borderRadius: "8" }
+    ]
+  };
+
+  let state = JSON.parse(JSON.stringify(DESIGN_JSON));
+  let selectedId = null;
+  let cmdHistory = [];
+
+  const SUGGESTIONS = [
+    "Make the header dark navy",
+    "Add a search bar at the top",
+    "Change sales card to green",
+    "Make sidebar narrower",
+    "Add a footer element",
+    "Change header text to 'Sales Hub'",
+    "Make chart area larger",
+    "Remove the activity feed",
+    "Add a notifications panel",
+    "Change all cards to have blue borders"
+  ];
+
+  function renderCanvas() {
+    const inner = document.getElementById('canvas-inner');
+    inner.style.width = state.canvas.width + 'px';
+    inner.style.height = state.canvas.height + 'px';
+    inner.style.background = state.canvas.background || '#fff';
+    inner.style.position = 'relative';
+    inner.innerHTML = '';
+
+    const bg = document.getElementById('canvas-bg');
+    bg.style.width = state.canvas.width + 'px';
+    bg.style.height = state.canvas.height + 'px';
+    document.getElementById('canvas-ruler').textContent = state.canvas.width + ' × ' + state.canvas.height + ' px';
+
+    state.elements.forEach(el => {
+      const div = document.createElement('div');
+      div.className = 'layout-el' + (selectedId === el.id ? ' selected' : '');
+      div.style.left = el.x + 'px';
+      div.style.top = el.y + 'px';
+      div.style.width = el.w + 'px';
+      div.style.height = el.h + 'px';
+      div.style.background = el.fill || '#fff';
+      div.style.border = el.border || 'none';
+      div.style.borderRadius = (el.borderRadius || '0') + 'px';
+
+      const label = document.createElement('span');
+      label.className = 'el-label-tag';
+      label.textContent = el.label || el.id;
+      div.appendChild(label);
+
+      const text = document.createElement('div');
+      text.className = 'el-text';
+      text.style.color = el.color || '#222';
+      text.style.fontSize = (el.fontSize || 13) + 'px';
+      text.style.fontWeight = el.fontWeight || '400';
+      text.textContent = el.text || '';
+      div.appendChild(text);
+
+      div.onclick = () => { selectedId = el.id; renderCanvas(); renderProps(); };
+      inner.appendChild(div);
+    });
+
+    const info = document.getElementById('el-info');
+    if (selectedId) {
+      const el = state.elements.find(e => e.id === selectedId);
+      info.textContent = el ? (el.label + ' — ' + el.w + '×' + el.h + ' at (' + el.x + ',' + el.y + ')') : 'No element selected';
+    } else {
+      info.textContent = 'Click an element to select';
+    }
+  }
+
+  function renderProps() {
+    const el = state.elements.find(e => e.id === selectedId);
+    const pc = document.getElementById('props-content');
+    if (!el) {
+      pc.innerHTML = '<p style="font-size:12px;color:var(--text-3)">Click an element on the canvas to inspect its properties.</p>';
+      return;
+    }
+    pc.innerHTML = `
+      <div class="prop-row"><div class="prop-label">ID</div><div class="prop-value">${el.id}</div></div>
+      <div class="prop-row"><div class="prop-label">Label</div><div class="prop-value">${el.label}</div></div>
+      <div class="prop-row"><div class="prop-label">Position</div><div class="prop-value">x: ${el.x}, y: ${el.y}</div></div>
+      <div class="prop-row"><div class="prop-label">Size</div><div class="prop-value">${el.w} × ${el.h}</div></div>
+      <div class="prop-row"><div class="prop-label">Fill</div><div class="prop-value"><span class="prop-color-swatch" style="background:${el.fill||'#fff'}"></span>${el.fill||'—'}</div></div>
+      <div class="prop-row"><div class="prop-label">Text color</div><div class="prop-value"><span class="prop-color-swatch" style="background:${el.color||'#222'}"></span>${el.color||'—'}</div></div>
+      <div class="prop-row"><div class="prop-label">Font size</div><div class="prop-value">${el.fontSize||13}px</div></div>
+      <div class="prop-row"><div class="prop-label">Text</div><div class="prop-value" style="white-space:pre-line">${el.text||'—'}</div></div>
+    `;
+  }
+
+  function addMessage(text, role, extra) {
+    const msgs = document.getElementById('messages');
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-wrap ' + role;
+    const sender = document.createElement('div');
+    sender.className = 'msg-sender';
+    sender.textContent = role === 'user' ? 'You' : 'Agent';
+    const msg = document.createElement('div');
+    msg.className = 'msg ' + role + (extra ? ' ' + extra : '');
+    msg.textContent = text;
+    wrap.appendChild(sender);
+    wrap.appendChild(msg);
+    msgs.appendChild(wrap);
+    msgs.scrollTop = msgs.scrollHeight;
+    return msg;
+  }
+
+  function removeThinking() {
+    document.querySelectorAll('.msg.thinking').forEach(el => el.parentElement.remove());
+  }
+
+  function renderSuggestions() {
+    const s = document.getElementById('suggestions');
+    s.innerHTML = '';
+    const shown = SUGGESTIONS.sort(() => Math.random() - 0.5).slice(0, 3);
+    shown.forEach(text => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = text;
+      chip.onclick = () => processCommand(text);
+      s.appendChild(chip);
+    });
+  }
+
+  function addHistory(cmd) {
+    cmdHistory.unshift(cmd);
+    const hl = document.getElementById('history-list');
+    hl.innerHTML = '';
+    cmdHistory.slice(0, 6).forEach(c => {
+      const d = document.createElement('div');
+      d.className = 'history-item';
+      d.textContent = c.length > 32 ? c.slice(0, 32) + '…' : c;
+      hl.appendChild(d);
+    });
+  }
+
+  async function processCommand(cmd) {
+    if (!cmd.trim()) return;
+    addMessage(cmd, 'user');
+    document.getElementById('chat-input').value = '';
+    document.getElementById('send-btn').disabled = true;
+    addHistory(cmd);
+    const thinking = addMessage('Thinking...', 'agent', 'thinking');
+
+    const systemPrompt = `You are a UI layout agent. The user describes changes to a canvas layout in natural language. You must return ONLY a valid JSON object (no markdown, no explanation, no backticks) representing the updated layout.
+
+Current layout:
+${JSON.stringify(state, null, 2)}
+
+Rules:
+- Return ONLY valid JSON — no text before or after.
+- Maintain the structure: { canvas: { width, height, background }, elements: [...] }
+- Each element must have: id (string), type ("rect"), label, x, y, w, h, fill, color, text
+- Optional: fontSize (number), fontWeight, textAlign, border, borderRadius
+- x, y, w, h are numbers (pixels). Canvas is ${state.canvas.width}×${state.canvas.height}.
+- Use hex colors only for fill and color.
+- If removing an element, exclude it from the array.
+- If adding, give a new unique id and reasonable position.`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: systemPrompt + '\n\nUser request: ' + cmd + '\n\nRespond with ONLY the updated JSON:' }]
+        })
+      });
+      const data = await res.json();
+      const raw = (data.content?.find(b => b.type === 'text')?.text || '').replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(raw);
+      if (parsed?.elements && parsed?.canvas) {
+        state = parsed;
+        selectedId = null;
+        renderCanvas();
+        renderProps();
+        removeThinking();
+        addMessage('Done! Canvas updated ✓', 'agent', 'success');
+      } else {
+        throw new Error('bad structure');
+      }
+    } catch(e) {
+      removeThinking();
+      addMessage('Could not apply that change. Try rephrasing, e.g. "make the header blue".', 'agent', 'error');
+    }
+    document.getElementById('send-btn').disabled = false;
+    renderSuggestions();
+  }
+
+  function resetLayout() {
+    state = JSON.parse(JSON.stringify(DESIGN_JSON));
+    selectedId = null;
+    cmdHistory = [];
+    renderCanvas();
+    renderProps();
+    document.getElementById('messages').innerHTML = '';
+    document.getElementById('history-list').innerHTML = '';
+    addMessage('Layout reset to default. Try asking me to change something!', 'agent');
+    renderSuggestions();
+  }
+
+  function showJSON() {
+    document.getElementById('json-content').textContent = JSON.stringify(state, null, 2);
+    document.getElementById('json-modal').classList.add('open');
+  }
+
+  function exportJSON() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'layout.json'; a.click();
+  }
+
+  const input = document.getElementById('chat-input');
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); processCommand(input.value); }
+  });
+  document.getElementById('send-btn').onclick = () => processCommand(input.value);
+  document.getElementById('json-modal').onclick = e => { if (e.target === document.getElementById('json-modal')) e.target.classList.remove('open'); };
+
+  addMessage('Hi! I\'m the Compra layout agent. Describe any UI change — like "make the header dark", "add a search bar", or "remove the sidebar" — and I\'ll update the canvas instantly.', 'agent');
+  renderCanvas();
+  renderSuggestions();
+</script>
+</body>
+</html>
